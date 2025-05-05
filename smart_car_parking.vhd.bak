@@ -1,0 +1,61 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.NUMERIC_STD.ALL;
+
+entity smart_car_parking is
+    Port (
+        clk       : in STD_LOGIC;
+        button    : in STD_LOGIC;
+        ir_sensor : in STD_LOGIC;
+        pwm_out   : out STD_LOGIC;
+        seg       : out STD_LOGIC_VECTOR (6 downto 0)
+    );
+end smart_car_parking;
+
+architecture Behavioral of smart_car_parking is
+    signal gate_open : STD_LOGIC := '0';
+    signal button_d  : STD_LOGIC := '0';
+    signal car_count : INTEGER range 0 to 9 := 0;
+begin
+    -- Instantiate the PWM Servo Module
+    pwm_inst: entity work.pwm_servo
+        port map (
+            clk      => clk,
+            gate_open => gate_open,
+            pwm_out  => pwm_out
+        );
+
+    -- Instantiate the Car Counter Module
+    counter_inst: entity work.car_counter
+        port map (
+            clk       => clk,
+            ir_sensor => ir_sensor,
+            car_count => car_count
+        );
+
+    -- Instantiate the 7-Segment Display Module
+    display_inst: entity work.seven_segment_display
+        port map (
+            car_count => car_count,
+            seg       => seg
+        );
+
+    -- Control Process for Gate and Edge Detection for Button Press
+    process(clk)
+    begin
+        if rising_edge(clk) then
+            button_d <= button;
+
+            -- Open the gate on rising edge of the button press
+            if button = '1' and button_d = '0' then
+                gate_open <= '1';
+            end if;
+
+            -- Close the gate immediately when a car is detected by the IR sensor
+            if ir_sensor = '1' then
+                gate_open <= '0';
+            end if;
+        end if;
+    end process;
+end Behavioral;
+

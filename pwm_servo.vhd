@@ -1,0 +1,46 @@
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.NUMERIC_STD.ALL;
+
+entity pwm_servo is
+    Port (
+        clk      : in STD_LOGIC;
+        gate_open: in STD_LOGIC;
+        pwm_out  : out STD_LOGIC
+    );
+end pwm_servo;
+
+architecture Behavioral of pwm_servo is
+    constant CLOCK_FREQ : INTEGER := 50000000; 
+    constant PWM_PERIOD : INTEGER := 1000000; 
+
+    constant PULSE_WIDTH_CLOSED : INTEGER := 50000;   
+    constant PULSE_WIDTH_OPEN   : INTEGER := 100000;
+
+    signal pwm_counter: INTEGER range 0 to PWM_PERIOD := 0;
+    signal duty_cycle : INTEGER := PULSE_WIDTH_CLOSED;
+begin
+    process(clk)
+    begin
+        if rising_edge(clk) then
+            if gate_open = '1' then
+                duty_cycle <= PULSE_WIDTH_OPEN;  
+            else
+                duty_cycle <= PULSE_WIDTH_CLOSED; 
+            end if;
+
+            if pwm_counter < duty_cycle then
+                pwm_out <= '1';
+            else
+                pwm_out <= '0';
+            end if;
+
+            pwm_counter <= pwm_counter + 1;
+            if pwm_counter = PWM_PERIOD then
+                pwm_counter <= 0;
+            end if;
+        end if;
+    end process;
+end Behavioral; 
+
+
